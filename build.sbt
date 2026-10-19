@@ -4,5 +4,6 @@ ThisBuild / organization := "com.arjun"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "logscope"
+    name := "logscope",
+    libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.5.9"
   )
