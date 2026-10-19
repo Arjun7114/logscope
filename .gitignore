@@ -1,0 +1,22 @@
+# sbt / Scala build output
+target/
+project/target/
+project/project/
+.bsp/
+
+# Metals / IDE files
+.metals/
+.bloop/
+.idea/
+*.iml
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Data — never commit the dataset or large files
+data/
+*.log
+*.csv
+*.gz
+*.zip
