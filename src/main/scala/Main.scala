@@ -2,21 +2,33 @@ import org.apache.spark.sql.SparkSession
 
 object Main {
   def main(args: Array[String]): Unit = {
-    // Start a local Spark session using all CPU cores
     val spark = SparkSession.builder()
       .appName("logscope")
       .master("local[*]")
       .getOrCreate()
 
-    // Quiet down Spark's very chatty logging
     spark.sparkContext.setLogLevel("WARN")
+    import spark.implicits._
 
-    // Read the sample log file, one line per row
-    val lines = spark.read.textFile("data/sample.log")
+    val inputPath = "data/sample.log"
 
-    println(s"==> Total lines: ${lines.count()}")
-    println("==> First few lines:")
-    lines.show(5, truncate = false)
+    // Read raw lines, then parse each into a structured LogEvent.
+    // flatMap drops any line that didn't match (parse returned None).
+    val rawLines = spark.read.textFile(inputPath)
+    val events   = rawLines.flatMap(LogParser.parse)
+
+    val total  = rawLines.count()
+    val parsed = events.count()
+
+    println(s"==> Raw lines:     $total")
+    println(s"==> Parsed events: $parsed")
+    println(s"==> Unparsed:      ${total - parsed}")
+
+    println("==> Sample of parsed events:")
+    events.show(5, truncate = false)
+
+    println("==> Event counts by log level:")
+    events.groupBy("level").count().show()
 
     spark.stop()
   }
