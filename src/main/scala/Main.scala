@@ -2,6 +2,9 @@ import org.apache.spark.sql.SparkSession
 
 object Main {
   def main(args: Array[String]): Unit = {
+    // Use the path passed on the command line, else fall back to the small sample.
+    val inputPath = if (args.nonEmpty) args(0) else "data/sample.log"
+
     val spark = SparkSession.builder()
       .appName("logscope")
       .master("local[*]")
@@ -10,12 +13,11 @@ object Main {
     spark.sparkContext.setLogLevel("WARN")
     import spark.implicits._
 
-    val inputPath = "data/sample.log"
+    println(s"==> Reading from: $inputPath")
 
-    // Read raw lines, then parse each into a structured LogEvent.
-    // flatMap drops any line that didn't match (parse returned None).
     val rawLines = spark.read.textFile(inputPath)
-    val events   = rawLines.flatMap(LogParser.parse)
+    // Parse, and cache so we don't re-parse the whole file for every action below.
+    val events = rawLines.flatMap(LogParser.parse).cache()
 
     val total  = rawLines.count()
     val parsed = events.count()
