@@ -24,19 +24,18 @@ object Main {
     println(s"==> Parsed events: $parsed")
     println(s"==> Unparsed:      ${total - parsed}")
 
-    // --- Block ID analysis ---
-    val withBlocks = events.filter(size($"blockIds") > 0).count()
-    println(s"==> Events with a block id: $withBlocks")
-    println(s"==> Events with no block id: ${parsed - withBlocks}")
-
     val distinctBlocks = events
       .select(explode($"blockIds").as("blockId"))
       .distinct()
       .count()
     println(s"==> Distinct block ids: $distinctBlocks")
 
-    println("==> Sample events with their block ids:")
-    events.select($"component", $"blockIds").show(5, truncate = false)
+    // --- Template analysis ---
+    val distinctTemplates = events.select($"template").distinct().count()
+    println(s"==> Distinct templates: $distinctTemplates")
+
+    println("==> Templates by frequency:")
+    events.groupBy($"template").count().orderBy($"count".desc).show(50, truncate = false)
 
     spark.stop()
   }
