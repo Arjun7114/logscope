@@ -5,22 +5,24 @@ case class LogEvent(
   pid: String,
   level: String,
   component: String,
-  content: String
+  content: String,
+  blockIds: Seq[String]
 )
 
 /** Pure functions for turning raw HDFS log lines into structured LogEvents. */
 object LogParser {
 
-  // HDFS log format:
-  //   <date> <time> <pid> <level> <component>: <content>
-  // e.g. 081109 203615 148 INFO dfs.DataNode$PacketResponder: PacketResponder 1 ...
+  // <date> <time> <pid> <level> <component>: <content>
   private val LinePattern =
     """^(\d{6})\s+(\d{6})\s+(\d+)\s+(\w+)\s+([\w.$]+):\s+(.*)$""".r
 
-  /** Parse one line. Returns None if the line doesn't match the expected format. */
+  // HDFS block ids look like blk_38865049064139660 or blk_-6952295868487656571
+  private val BlockPattern = """blk_-?\d+""".r
+
   def parse(line: String): Option[LogEvent] = line match {
     case LinePattern(date, time, pid, level, component, content) =>
-      Some(LogEvent(date, time, pid, level, component, content))
+      val blocks = BlockPattern.findAllIn(content).toList
+      Some(LogEvent(date, time, pid, level, component, content, blocks))
     case _ => None
   }
 }
