@@ -7,7 +7,8 @@ lazy val root = (project in file("."))
     name := "logscope",
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql"   % "3.5.9",
-      "org.apache.spark" %% "spark-mllib" % "3.5.9"
+      "org.apache.spark" %% "spark-mllib" % "3.5.9",
+      "org.scalatest"    %% "scalatest"   % "3.2.19" % Test
     ),
     fork := true,
     javaOptions ++= Seq(
