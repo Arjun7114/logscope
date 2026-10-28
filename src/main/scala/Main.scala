@@ -16,26 +16,39 @@ object Main {
     println(s"==> Reading from: $inputPath")
 
     val rawLines = spark.read.textFile(inputPath)
-    val events   = rawLines.flatMap(LogParser.parse).cache()
+    val events   = rawLines.flatMap(LogParser.parse)
 
-    val total  = rawLines.count()
-    val parsed = events.count()
-    println(s"==> Raw lines:     $total")
-    println(s"==> Parsed events: $parsed")
-    println(s"==> Unparsed:      ${total - parsed}")
+    // One row per (block, event template)
+    val blockTemplates = events
+      .select(explode($"blockIds").as("blockId"), $"template")
 
-    val distinctBlocks = events
-      .select(explode($"blockIds").as("blockId"))
-      .distinct()
+    // Event-count matrix (long form): how many times each template occurs per block
+    val counts = blockTemplates
+      .groupBy($"blockId", $"template")
       .count()
-    println(s"==> Distinct block ids: $distinctBlocks")
+      .cache()
 
-    // --- Template analysis ---
-    val distinctTemplates = events.select($"template").distinct().count()
-    println(s"==> Distinct templates: $distinctTemplates")
+    val numBlocks  = counts.select($"blockId").distinct().count()
+    val matrixRows = counts.count()
+    println(s"==> Blocks: $numBlocks")
+    println(s"==> Non-zero (block, template) cells: $matrixRows")
 
-    println("==> Templates by frequency:")
-    events.groupBy($"template").count().orderBy($"count".desc).show(50, truncate = false)
+    // Per-block: total events and distinct templates
+    val perBlockStats = blockTemplates
+      .groupBy($"blockId")
+      .agg(
+        count(lit(1)).as("numEvents"),
+        countDistinct($"template").as("numTemplates")
+      )
+
+    println("==> Events per block (min / avg / max):")
+    perBlockStats.agg(min($"numEvents"), round(avg($"numEvents"), 2), max($"numEvents")).show()
+
+    println("==> Distinct templates per block (min / avg / max):")
+    perBlockStats.agg(min($"numTemplates"), round(avg($"numTemplates"), 2), max($"numTemplates")).show()
+
+    println("==> Sample of the count matrix (highest single counts):")
+    counts.orderBy($"count".desc).show(10, truncate = false)
 
     spark.stop()
   }
