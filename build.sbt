@@ -5,7 +5,10 @@ ThisBuild / organization := "com.arjun"
 lazy val root = (project in file("."))
   .settings(
     name := "logscope",
-    libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.5.9",
+    libraryDependencies ++= Seq(
+      "org.apache.spark" %% "spark-sql"   % "3.5.9",
+      "org.apache.spark" %% "spark-mllib" % "3.5.9"
+    ),
     fork := true,
     javaOptions ++= Seq(
       "--add-opens=java.base/java.lang=ALL-UNNAMED",
