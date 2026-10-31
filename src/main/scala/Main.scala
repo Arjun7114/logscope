@@ -1,7 +1,9 @@
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 import org.apache.spark.ml.feature.StringIndexer
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
+import org.apache.spark.ml.functions.vector_to_array
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -48,6 +50,19 @@ object Main {
     println(f"==> Recall:    $recall%.4f")
     println(f"==> F1:        $f1%.4f")
     println(f"==> ROC AUC:   $auc%.4f")
+
+    // --- Write the flagged anomalies to a ranked CSV report ---
+    val report = pred
+      .withColumn("anomalyProb", vector_to_array($"probability")(1))
+      .filter($"prediction" === 1.0)
+      .select($"blockId", $"label", round($"anomalyProb", 4).as("anomalyProb"))
+      .orderBy($"anomalyProb".desc)
+      .cache()
+
+    val nFlagged = report.count()
+    val outPath  = "output/anomalies"
+    report.coalesce(1).write.option("header", "true").mode("overwrite").csv(outPath)
+    println(s"==> Wrote $nFlagged flagged anomalies to $outPath/")
 
     spark.stop()
   }
