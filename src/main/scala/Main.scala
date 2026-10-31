@@ -7,14 +7,19 @@ import org.apache.spark.ml.functions.vector_to_array
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val inputPath = if (args.nonEmpty) args(0) else "data/sample.log"
-    val labelPath = "data/HDFS_v1/preprocessed/anomaly_label.csv"
+    val inputPath  = if (args.length > 0) args(0) else "data/sample.log"
+    val labelPath  = if (args.length > 1) args(1) else "data/HDFS_v1/preprocessed/anomaly_label.csv"
+    val outputPath = if (args.length > 2) args(2) else "output/anomalies"
 
-    val spark = SparkSession.builder().appName("logscope").master("local[*]").getOrCreate()
+    // Use local[*] only when no master is set (spark-submit on a cluster provides one)
+    val builder = SparkSession.builder().appName("logscope")
+    if (!sys.props.contains("spark.master")) builder.master("local[*]")
+    val spark = builder.getOrCreate()
+
     spark.sparkContext.setLogLevel("WARN")
     import spark.implicits._
 
-    println(s"==> Reading from: $inputPath")
+    println(s"==> input=$inputPath  labels=$labelPath  output=$outputPath")
 
     val featured = Pipeline.featureMatrix(spark, inputPath)
 
@@ -51,7 +56,6 @@ object Main {
     println(f"==> F1:        $f1%.4f")
     println(f"==> ROC AUC:   $auc%.4f")
 
-    // --- Write the flagged anomalies to a ranked CSV report ---
     val report = pred
       .withColumn("anomalyProb", vector_to_array($"probability")(1))
       .filter($"prediction" === 1.0)
@@ -60,9 +64,8 @@ object Main {
       .cache()
 
     val nFlagged = report.count()
-    val outPath  = "output/anomalies"
-    report.coalesce(1).write.option("header", "true").mode("overwrite").csv(outPath)
-    println(s"==> Wrote $nFlagged flagged anomalies to $outPath/")
+    report.coalesce(1).write.option("header", "true").mode("overwrite").csv(outputPath)
+    println(s"==> Wrote $nFlagged flagged anomalies to $outputPath")
 
     spark.stop()
   }
