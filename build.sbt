@@ -26,5 +26,24 @@ lazy val root = (project in file("."))
       "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
       "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
       "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+    ),
+
+    // --- Fat-jar packaging (sbt-assembly) ---
+    assembly / mainClass       := Some("Main"),
+    assembly / assemblyJarName := "logscope.jar",
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", _*)  => MergeStrategy.concat
+      case PathList("META-INF", _*)              => MergeStrategy.discard
+      case "module-info.class"                   => MergeStrategy.discard
+      case x if x.endsWith("/module-info.class") => MergeStrategy.discard
+      case "reference.conf"                      => MergeStrategy.concat
+      case _                                     => MergeStrategy.first
+    },
+    assembly / packageOptions += Package.ManifestAttributes(
+      "Add-Opens" -> ("java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect " +
+        "java.base/java.io java.base/java.net java.base/java.nio java.base/java.util " +
+        "java.base/java.util.concurrent java.base/java.util.concurrent.atomic " +
+        "java.base/sun.nio.ch java.base/sun.nio.cs java.base/sun.security.action " +
+        "java.base/sun.util.calendar java.security.jgss/sun.security.krb5")
     )
   )
