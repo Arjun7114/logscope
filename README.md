@@ -106,6 +106,27 @@ sbt "runMain Main data/HDFS_v1/HDFS.log"
 sbt "runMain Benchmark data/HDFS_v1/HDFS.log local[8]"
 ```
 
+## Packaging
+
+Build a self-contained fat jar (Spark bundled; Java-17 `--add-opens` flags baked into
+the manifest, so it runs with a plain `java -jar`):
+
+```bash
+sbt assembly          # -> target/scala-2.13/logscope.jar
+```
+
+Run it standalone — no sbt or separate Spark install needed:
+
+```bash
+java -jar target/scala-2.13/logscope.jar data/HDFS_v1/HDFS.log
+```
+
+Or submit it to a Spark cluster:
+
+```bash
+spark-submit --class Main target/scala-2.13/logscope.jar data/HDFS_v1/HDFS.log
+```
+
 ## Dataset
 HDFS_v1 from the Loghub collection (not committed; ~1.5 GB). Download `HDFS_v1.zip`
 from Zenodo and unzip into `data/HDFS_v1/` so that `data/HDFS_v1/HDFS.log` and
