@@ -47,9 +47,17 @@ flowchart TD
 | F1 | 0.987 |
 | ROC AUC | 0.999 |
 
-An unsupervised **K-Means-distance baseline** (labels used only to evaluate) reaches
-**F1 ≈ 0.68** on the same data — an honest contrast between a simple baseline and a
-proper supervised model.
+### Method comparison
+
+| Method | Type | F1 |
+|---|---|---:|
+| Logistic Regression | supervised | **0.987** |
+| K-Means distance | unsupervised | 0.68 |
+| PCA reconstruction error | unsupervised | 0.68 |
+
+Both unsupervised methods plateau around **F1 0.68** on this feature representation;
+the supervised model, using the labels, is far stronger. Unsupervised scores use the
+labels only to evaluate, never to train.
 
 > **Honest note:** HDFS_v1 is a well-known, highly *separable* benchmark, so strong
 > supervised scores are expected and are **not** a novel ML result. This project is
