@@ -135,6 +135,14 @@ Or submit it to a Spark cluster:
 spark-submit --class Main target/scala-2.13/logscope.jar data/HDFS_v1/HDFS.log
 ```
 
+## Deployment (AWS EMR)
+
+Validated running distributed on a multi-node **AWS EMR** cluster (Spark on YARN),
+reading input and writing the anomaly report to S3 — full pipeline end to end in
+~7 min on 2× m5.xlarge. See [`DEPLOY.md`](DEPLOY.md). Note: EMR's Spark is Scala 2.12,
+so the cluster jar is cross-built with `sbt ++2.12.18 package`.
+
+
 ## Dataset
 HDFS_v1 from the Loghub collection (not committed; ~1.5 GB). Download `HDFS_v1.zip`
 from Zenodo and unzip into `data/HDFS_v1/` so that `data/HDFS_v1/HDFS.log` and
